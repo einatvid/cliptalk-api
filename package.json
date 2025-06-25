@@ -1,15 +1,15 @@
 {
   "name": "cliptalk-api",
   "version": "1.0.0",
-  "description": "Voice translation API using OpenAI and Google TTS",
+  "description": "Voice translation API using OpenAI and ElevenLabs",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@google-cloud/text-to-speech": "^4.2.0",
+    "axios": "^1.6.8",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "openai": "^4.24.1",
-    "dotenv": "^16.3.1"
+    "openai": "^4.24.1"
   }
 }
