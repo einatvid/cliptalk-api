@@ -1,25 +1,21 @@
 // index.js
 const express = require('express');
-const { TextToSpeechClient } = require('@google-cloud/text-to-speech');
 const { OpenAI } = require('openai');
-const fs = require('fs');
-const util = require('util');
-const path = require('path');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 10000;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const client = new TextToSpeechClient();
 
 app.use(express.json());
 
 app.post('/speak', async (req, res) => {
   try {
-    const { text, languageCode = 'he-IL', voiceName = 'he-IL-Standard-D' } = req.body;
+    const { text } = req.body;
 
-    // תרגום בעזרת OpenAI
+    // תרגום לעברית עם OpenAI
     const translation = await openai.chat.completions.create({
       messages: [{ role: 'user', content: `Translate this into fluent Hebrew: ${text}` }],
       model: 'gpt-3.5-turbo'
@@ -27,25 +23,40 @@ app.post('/speak', async (req, res) => {
 
     const translatedText = translation.choices[0].message.content;
 
-    // דיבור עם Google TTS
-    const [response] = await client.synthesizeSpeech({
-      input: { text: translatedText },
-      voice: { languageCode, name: voiceName },
-      audioConfig: { audioEncoding: 'MP3' },
-    });
+    // דיבור עם ElevenLabs
+    const voiceId = 'TxGEqnHWrfWFTfGW9XjX'; // זה קול גברי בעברית – אפשר להחליף אם נרצה
+    const audioResponse = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        text: translatedText,
+        model_id: "eleven_monolingual_v1",
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75
+        }
+      },
+      {
+        headers: {
+          'xi-api-key': process.env.ELEVENLABS_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        responseType: 'arraybuffer'
+      }
+    );
 
     res.set('Content-Type', 'audio/mpeg');
-    res.send(response.audioContent);
+    res.send(audioResponse.data);
+
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).send('An error occurred while processing your request.');
+    console.error('Error:', error?.response?.data || error.message);
+    res.status(500).send('Error processing your request.');
   }
 });
 
 app.get('/', (req, res) => {
-  res.send('Cliptalk API is live 🚀');
+  res.send('Cliptalk API with ElevenLabs is live 🎙️');
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
