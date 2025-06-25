@@ -1,13 +1,10 @@
 // index.js
 const express = require('express');
-const { OpenAI } = require('openai');
 const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 10000;
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 app.use(express.json());
 
@@ -15,16 +12,26 @@ app.post('/speak', async (req, res) => {
   try {
     const { text } = req.body;
 
-    // תרגום לעברית עם OpenAI
-    const translation = await openai.chat.completions.create({
-      messages: [{ role: 'user', content: `Translate this into fluent Hebrew: ${text}` }],
-      model: 'gpt-3.5-turbo'
-    });
+    // תרגום לעברית עם DeepSeek
+    const translationResponse = await axios.post(
+      'https://api.deepseek.com/v1/translate',
+      {
+        text: text,
+        source_lang: "auto",
+        target_lang: "he"
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.deepseektranslate}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    const translatedText = translation.choices[0].message.content;
+    const translatedText = translationResponse.data.translated_text;
 
-    // דיבור עם ElevenLabs
-    const voiceId = 'TxGEqnHWrfWFTfGW9XjX'; // זה קול גברי בעברית – אפשר להחליף אם נרצה
+    // דיבור עם ElevenLabs (אותו קוד)
+    const voiceId = 'TxGEqnHWrfWFTfGW9XjX'; // קול גברי בעברית
     const audioResponse = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       {
@@ -54,7 +61,7 @@ app.post('/speak', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Cliptalk API with ElevenLabs is live 🎙️');
+  res.send('Cliptalk API with ElevenLabs and DeepSeek is live 🎙️');
 });
 
 app.listen(port, () => {
