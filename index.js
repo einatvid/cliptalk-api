@@ -1,4 +1,3 @@
-// index.js
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
@@ -8,11 +7,15 @@ const port = process.env.PORT || 10000;
 
 app.use(express.json());
 
+// Print env variable to log for debugging
+console.log("deepseektranslate env value:", process.env.deepseektranslate);
+
 app.post('/speak', async (req, res) => {
   try {
     const { text } = req.body;
+    console.log("BODY TEXT:", text);
 
-    // תרגום לעברית עם DeepSeek
+    // Translate to Hebrew with DeepSeek
     const translationResponse = await axios.post(
       'https://api.deepseek.com/v1/translate',
       {
@@ -29,9 +32,10 @@ app.post('/speak', async (req, res) => {
     );
 
     const translatedText = translationResponse.data.translated_text;
+    console.log("TRANSLATED TEXT:", translatedText);
 
-    // דיבור עם ElevenLabs (אותו קוד)
-    const voiceId = 'TxGEqnHWrfWFTfGW9XjX'; // קול גברי בעברית
+    // Text-to-speech with ElevenLabs
+    const voiceId = 'TxGEqnHWrfWFTfGW9XjX';
     const audioResponse = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       {
@@ -55,13 +59,14 @@ app.post('/speak', async (req, res) => {
     res.send(audioResponse.data);
 
   } catch (error) {
-    console.error('Error:', error?.response?.data || error.message);
-    res.status(500).send('Error processing your request.');
+    // Print full error details to log
+    console.error('FULL ERROR:', error?.response?.data || error.message, error?.response?.status);
+    res.status(500).send(error?.response?.data || error.message);
   }
 });
 
 app.get('/', (req, res) => {
-  res.send('Cliptalk API with ElevenLabs and DeepSeek is live 🎙️');
+  res.send('Cliptalk API with ElevenLabs and DeepSeek is live');
 });
 
 app.listen(port, () => {
