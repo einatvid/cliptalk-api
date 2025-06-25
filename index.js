@@ -7,35 +7,26 @@ const port = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// Print env variable to log for debugging
-console.log("deepseektranslate env value:", process.env.deepseektranslate);
-
 app.post('/speak', async (req, res) => {
   try {
     const { text } = req.body;
     console.log("BODY TEXT:", text);
 
-    // Translate to Hebrew with DeepSeek
+    // תרגום לעברית עם LibreTranslate (ללא צורך במפתח)
     const translationResponse = await axios.post(
-      'https://api.deepseek.com/v1/translate',
+      'https://libretranslate.com/translate',
       {
-        text: text,
-        source_lang: "auto",
-        target_lang: "he"
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.deepseektranslate}`,
-          'Content-Type': 'application/json'
-        }
+        q: text,
+        source: "auto",
+        target: "he",
+        format: "text"
       }
     );
-
-    const translatedText = translationResponse.data.translated_text;
+    const translatedText = translationResponse.data.translatedText;
     console.log("TRANSLATED TEXT:", translatedText);
 
-    // Text-to-speech with ElevenLabs
-    const voiceId = 'TxGEqnHWrfWFTfGW9XjX';
+    // דיבור עם ElevenLabs (אותו קוד)
+    const voiceId = 'TxGEqnHWrfWFTfGW9XjX'; // קול גברי בעברית
     const audioResponse = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       {
@@ -66,7 +57,7 @@ app.post('/speak', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Cliptalk API with ElevenLabs and DeepSeek is live');
+  res.send('Cliptalk API with ElevenLabs and LibreTranslate is live');
 });
 
 app.listen(port, () => {
